@@ -1,0 +1,22 @@
+{
+  "mod_id": "mapviewfocustargeting",
+  "author": "Scarecrow71",
+  "name": "MapViewFocusTargeting",
+  "description": "A mod to allow using keyboard inputs to cycle through focus of celestial bodies, as well as set/unset them as targets.",
+  "source": "https://github.com/scarecrow71/mapviewfocustargeting",
+  "version": "1.0.0",
+  "version_check": "",
+  "dependencies": [
+    {
+      "id":  "SpaceWarp",
+      "version": {
+        "min": "1.0.1",
+        "max": "*"
+      }
+    }
+  ],
+  "ksp2_version": {
+    "min": "0.1.0",
+    "max": "*"
+  }
+}

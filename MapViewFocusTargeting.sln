@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{0469CB35-42D9-48A7-83CB-9611E8DE52CB}") = "MapViewFocusTargeting", "MapViewFocusTargetingProject\MapViewFocusTargeting.csproj", "{0970A313-D5B5-4B3A-9656-CCFE97C18C6E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0970A313-D5B5-4B3A-9656-CCFE97C18C6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0970A313-D5B5-4B3A-9656-CCFE97C18C6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0970A313-D5B5-4B3A-9656-CCFE97C18C6E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0970A313-D5B5-4B3A-9656-CCFE97C18C6E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
