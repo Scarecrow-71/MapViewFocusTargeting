@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using HarmonyLib;
 using KSP.UI.Binding;
 using SpaceWarp;
@@ -33,6 +33,8 @@ public class MapViewFocusTargetingPlugin : BaseSpaceWarpPlugin
     private MapItem mapBody;
     private MapItem mapVessel;
     private VesselComponent vessel;
+
+    private const float NOTIFICATION_DURATION = 5.0f;
 
     private int selectedCelestialBody;
     private string[] allCelestialBodies = new string[]
@@ -83,178 +85,126 @@ public class MapViewFocusTargetingPlugin : BaseSpaceWarpPlugin
     {
         if (Input.GetKeyDown(KeyCode.Home))
         {
-            try
-            {
-                mapVessel = new MapItem(vessel.GlobalId, MapItemType.Vessel);
-                Utils.MPSetFocusedMapItem(mapVessel);
-                selectedCelestialBody = -1;
-
-                NotificationData notificationData = new NotificationData
-                {
-                    Tier = NotificationTier.Alert,
-                    Importance = NotificationImportance.Medium,
-                    AlertTitle =
-                    {
-                        LocKey = "Focus Change"
-                    },
-                    FirstLine =
-                    {
-                        LocKey = "The focus has been set to " + vessel.Name
-                    },
-                    IsTimerActive = true,
-                    TimerDuration = 5f,
-                    TimeStamp = DateTime.Now.ToOADate()
-                };
-
-                game.Notifications.ProcessNotification(notificationData);
-            }
-            catch (Exception e) { }
+            FocusOnCurrentVessel();
         }
         else if (Input.GetKeyDown(KeyCode.KeypadMinus))
         {
-            if (selectedCelestialBody > 0)
-            {
-                try
-                {
-                    vessel.ClearTarget();
-
-                    NotificationData notificationData = new NotificationData
-                    {
-                        Tier = NotificationTier.Alert,
-                        Importance = NotificationImportance.Medium,
-                        AlertTitle =
-                    {
-                        LocKey = "Target Removed"
-                    },
-                        FirstLine =
-                    {
-                        LocKey = vessel.Name + " is no longer targeting a celestial body."
-                    },
-                        IsTimerActive = true,
-                        TimerDuration = 5f,
-                        TimeStamp = DateTime.Now.ToOADate()
-                    };
-
-                    game.Notifications.ProcessNotification(notificationData);
-                }
-                catch (Exception e) { }
-            }
+            RemoveTarget();
         }
         else if (Input.GetKeyDown(KeyCode.KeypadPlus))
         {
-            if (selectedCelestialBody > 0)
-            {
-                try
-                {
-                    var focusedBody = game.ViewController.GetBodyByName(allCelestialBodies[selectedCelestialBody]);
-                    vessel.SetTargetByID(focusedBody.GlobalId);
-
-                    NotificationData notificationData = new NotificationData
-                    {
-                        Tier = NotificationTier.Alert,
-                        Importance = NotificationImportance.Medium,
-                        AlertTitle =
-                    {
-                        LocKey = "Target Change"
-                    },
-                        FirstLine =
-                    {
-                        LocKey = "The Target has been set to " + focusedBody.Name
-                    },
-                        IsTimerActive = true,
-                        TimerDuration = 5f,
-                        TimeStamp = DateTime.Now.ToOADate()
-                    };
-
-                    game.Notifications.ProcessNotification(notificationData);
-                }
-                catch (Exception e) { }
-            }
+            SetTarget();
         }
         else if (Input.GetKeyDown(KeyCode.M))
         {
-            try
-            {
-                var currentVessel = Vehicle.ActiveVesselVehicle;
-
-                if (currentVessel != null)
-                {
-                    vessel = game.ViewController.GetActiveVehicle(true)?.GetSimVessel(true);
-                    selectedCelestialBody = -1;
-                }
-            }
-            catch (Exception e) { }
-            return;
+            ClearFocus();
         }
         else if (Input.GetKeyDown(KeyCode.PageDown))
         {
-            selectedCelestialBody = selectedCelestialBody - 1;
-            if (selectedCelestialBody < 0)
-            {
-                selectedCelestialBody = 16;
-            }
-
-            try
-            {
-                var focusedBody = game.ViewController.GetBodyByName(allCelestialBodies[selectedCelestialBody]);
-                mapBody = new MapItem(focusedBody.GlobalId, MapItemType.CelestialBody);
-                Utils.MPSetFocusedMapItem(mapBody);
-
-                NotificationData notificationData = new NotificationData
-                {
-                    Tier = NotificationTier.Alert,
-                    Importance = NotificationImportance.Medium,
-                    AlertTitle =
-                    {
-                        LocKey = "Focus Change"
-                    },
-                    FirstLine =
-                    {
-                        LocKey = "The focus has been set to " + focusedBody.Name
-                    },
-                    IsTimerActive = true,
-                    TimerDuration = 5f,
-                    TimeStamp = DateTime.Now.ToOADate()
-                };
-
-                game.Notifications.ProcessNotification(notificationData);
-            }
-            catch (Exception e) { }
+            FocusOnCelestialBody(selectedCelestialBody - 1);
         }
         else if (Input.GetKeyDown(KeyCode.PageUp))
         {
-            selectedCelestialBody = selectedCelestialBody + 1;
-            if (selectedCelestialBody > 16)
-            {
-                selectedCelestialBody = 0;
-            }
+            FocusOnCelestialBody(selectedCelestialBody + 1);
+        }
+    }
 
+
+    void SendAlertNotification(string title, string message)
+    {
+        NotificationData notificationData = new NotificationData
+        {
+            Tier = NotificationTier.Alert,
+            Importance = NotificationImportance.Medium,
+            AlertTitle =
+            {
+                LocKey = title
+            },
+            FirstLine =
+            {
+                LocKey = message
+            },
+            IsTimerActive = true,
+            TimerDuration = NOTIFICATION_DURATION,
+            TimeStamp = DateTime.Now.ToOADate()
+        };
+
+        game.Notifications.ProcessNotification(notificationData);
+    }
+    void FocusOnCurrentVessel()
+    {
+        try
+        {
+            mapVessel = new MapItem(vessel.GlobalId, MapItemType.Vessel);
+            Utils.MPSetFocusedMapItem(mapVessel);
+            selectedCelestialBody = -1;
+            SendAlertNotification("Focus Change", "The focus has been set to " + vessel.Name);
+        }
+        catch (Exception e) { }
+    }
+
+    void RemoveTarget()
+    {
+        try
+        {
+            if (selectedCelestialBody > 0)
+            {
+                vessel.ClearTarget();
+                SendAlertNotification("Target Removed", vessel.Name + " is no longer targeting " + allCelestialBodies[selectedCelestialBody]);
+            }
+        }
+        catch (Exception e) { }
+    }
+
+    void SetTarget()
+    {
+        if (selectedCelestialBody > 0)
+        {
             try
             {
                 var focusedBody = game.ViewController.GetBodyByName(allCelestialBodies[selectedCelestialBody]);
-                mapBody = new MapItem(focusedBody.GlobalId, MapItemType.CelestialBody);
-                Utils.MPSetFocusedMapItem(mapBody);
-
-                NotificationData notificationData = new NotificationData
-                {
-                    Tier = NotificationTier.Alert,
-                    Importance = NotificationImportance.Medium,
-                    AlertTitle =
-                    {
-                        LocKey = "Focus Change"
-                    },
-                    FirstLine =
-                    {
-                        LocKey = "The focus has been set to " + focusedBody.Name
-                    },
-                    IsTimerActive = true,
-                    TimerDuration = 5f,
-                    TimeStamp = DateTime.Now.ToOADate()
-                };
-
-                game.Notifications.ProcessNotification(notificationData);
+                vessel.SetTargetByID(focusedBody.GlobalId);
+                SendAlertNotification("Target Change", "The Target has been set to " + focusedBody.Name);
             }
             catch (Exception e) { }
         }
+    }
+
+    void ClearFocus()
+    {
+        try
+        {
+            var currentVessel = Vehicle.ActiveVesselVehicle;
+
+            if (currentVessel != null)
+            {
+                vessel = game.ViewController.GetActiveVehicle(true)?.GetSimVessel(true);
+                selectedCelestialBody = -1;
+            }
+        }
+        catch (Exception e) { }
+        // return;
+    }
+
+    void FocusOnCelestialBody(int targetBody)
+    {
+        selectedCelestialBody = targetBody;
+        if (selectedCelestialBody < 0)
+        {
+            selectedCelestialBody = allCelestialBodies.Length - 1;
+        }
+        else if (selectedCelestialBody > allCelestialBodies.Length - 1)
+        {
+            selectedCelestialBody = 0;
+        }
+
+        try
+        {
+            var focusedBody = game.ViewController.GetBodyByName(allCelestialBodies[selectedCelestialBody]);
+            mapBody = new MapItem(focusedBody.GlobalId, MapItemType.CelestialBody);
+            Utils.MPSetFocusedMapItem(mapBody);
+            SendAlertNotification("Focus Change", "The focus has been set to " + focusedBody.Name);
+        }
+        catch (Exception e) { }
     }
 }
